@@ -19,80 +19,78 @@ half_add_sub_tb.v	Stimulus and VCD generation
 
 ### Verilog Program
 ```
-// gedit mux_demux.v
+// gedit half_add_sub.v
 
-module mux2to1 (
-    input wire A,       // input line 0
-    input wire B,       // input line 1
-    input wire S,       // select line
-    output wire Y       // output
+module half_adder (
+    input wire A,
+    input wire B,
+    output wire Sum,
+    output wire Carry
 );
 
-    assign Y = (~S & A) | (S & B);
+    assign Sum = A ^ B;     // XOR
+    assign Carry = A & B;   // AND
 
 endmodule
 
 
-module demux1to2 (
-    input wire D,       // data input
-    input wire S,       // select line
-    output wire Y0,     // output line 0
-    output wire Y1      // output line 1
+module half_subtractor (
+    input wire A,
+    input wire B,
+    output wire Diff,
+    output wire Borrow
 );
 
-    assign Y0 = (~S) & D;
-    assign Y1 = S & D;
+    assign Diff = A ^ B;        // XOR
+    assign Borrow = (~A) & B;   // A' . B
 
 endmodule
+
+
 ```
 ### Testbench Program
 ```
-// gedit mux_demux_tb.v
+// gedit half_add_sub_tb.v
 
-module tb4;
-    reg A, B, S, D;
-    wire Y;
-    wire Y0, Y1;
+module tb3;
 
-    // Instantiate the 2:1 Multiplexer
-    mux2to1 mux (
+    reg A, B;
+    wire Sum, Carry;
+    wire Diff, Borrow;
+
+    // Instantiate the Half Adder
+    half_adder ha (
         .A(A),
         .B(B),
-        .S(S),
-        .Y(Y)
+        .Sum(Sum),
+        .Carry(Carry)
     );
 
-    // Instantiate the 1:2 Demultiplexer
-    demux1to2 demux (
-        .D(D),
-        .S(S),
-        .Y0(Y0),
-        .Y1(Y1)
+    // Instantiate the Half Subtractor
+    half_subtractor hs (
+        .A(A),
+        .B(B),
+        .Diff(Diff),
+        .Borrow(Borrow)
     );
 
     initial begin
         // ---- VCD dump setup ----
-        $dumpfile("mux_demux.vcd");
-        $dumpvars(0, tb4);
+        $dumpfile("half_add_sub.vcd");
+        $dumpvars(0, tb3);
 
-        // ---- Apply all input combinations ----
-        $monitor("Time=%0t S=%b A=%b B=%b Y=%b | D=%b Y0=%b Y1=%b",
-                 $time, S, A, B, Y, D, Y0, Y1);
+        // ---- Apply all 4 input combinations ----
+        $monitor("Time=%0t A=%b B=%b | Sum=%b Carry=%b | Diff=%b Borrow=%b",
+                 $time, A, B, Sum, Carry, Diff, Borrow);
 
-        // MUX select = 0 -> Y should follow A
-        S = 0; A = 0; B = 0; D = 0; #10;
-        S = 0; A = 0; B = 1; D = 1; #10;
-        S = 0; A = 1; B = 0; D = 1; #10;
-        S = 0; A = 1; B = 1; D = 0; #10;
-
-        // MUX select = 1 -> Y should follow B
-        S = 1; A = 0; B = 0; D = 0; #10;
-        S = 1; A = 0; B = 1; D = 1; #10;
-        S = 1; A = 1; B = 0; D = 1; #10;
-        S = 1; A = 1; B = 1; D = 0; #10;
+        A = 0; B = 0; #10;
+        A = 0; B = 1; #10;
+        A = 1; B = 0; #10;
+        A = 1; B = 1; #10;
 
         #10 $finish;
     end
+
 endmodule
 ```
 
